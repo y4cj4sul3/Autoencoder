@@ -1,0 +1,9 @@
+# vs code
+.vscode
+
+# python
+__pycache__
+autoencoder/__pycache__
+
+# log
+Log
