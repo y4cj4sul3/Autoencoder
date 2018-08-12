@@ -6,7 +6,7 @@ class Model:
     def __init__(self, config):
         # Construct model
         # input
-        self.input = tf.placeholder(tf.float32, config["input_shape"])
+        self.input = tf.placeholder(tf.float32, config["input_shape"], name="input")
 
         # encoder
         with tf.name_scope("encoder"):
@@ -26,7 +26,7 @@ class Model:
             self.decoder = self.createBlock(config["decoder"], self.decoder)
 
         # output
-        self.output = self.decoder
+        self.output = tf.identity(self.decoder, name="output")
 
         # loss
         # TODO: setting loss

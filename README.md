@@ -4,14 +4,22 @@ Try to build many kinds of autoencoder. Currently got general autoencoder only.
 VAE, RAE, and VRAE will be add in the future.
 
 ## Example
+
 ### AE
+
 Use example from tensorflow example tutorial.
+
 ```
-python example.py
+# train
+python train_AE.py
+# test
+python eval_AE.py
 ```
 
 ## Usage
-Use config to specify model architecture. See example in ```config.py```.
+
+Use config to specify model architecture. See example in `config.py`.
+
 ```python
 from autoencoder.model import Model
 
@@ -30,12 +38,13 @@ _, l = sess.run([model.optimizer, model.loss], feed_dict={model.input: batch_x})
 g = sess.run(model.decoder, feed_dict={model.input: batch_x})
 # test encoder
 g = sess.run(model.encoder, feed_dict={model.input: batch_x})
-
 ```
 
 ## Version
-```tensorflow 1.7.1```
-```tensorboard 1.7.0```
+
+`tensorflow 1.7.1`
+`tensorboard 1.7.0`
 
 ## Reference
+
 [Tensorflow Example](https://github.com/aymericdamien/TensorFlow-Examples)

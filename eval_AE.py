@@ -2,42 +2,18 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.examples.tutorials.mnist import input_data
-from autoencoder.model import Model
-from config import config
 
 # Import MNIST data
 mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
 
-# Training Parameters
-learning_rate = 0.01
-num_steps = 30000
-batch_size = 256
-
-display_step = 1000
-examples_to_show = 10
-
-# Construct model
-model = Model(config)
-model.train(learning_rate)
-
-# Visualize Graph
-writer = tf.summary.FileWriter("Log")
-writer.add_graph(tf.get_default_graph())
-
-# Start
 with tf.Session() as sess:
-    # Initialize
-    sess.run(model.init)
+    # restore model
+    saver = tf.train.import_meta_graph("./Model/autoencoder-30000.meta")
+    saver.restore(sess, tf.train.latest_checkpoint("./Model"))
 
-    # Traning
-    for i in range(1, num_steps + 1):
-        batch_x, _ = mnist.train.next_batch(batch_size)
-
-        # Run Optimization
-        _, l = sess.run([model.optimizer, model.loss], feed_dict={model.input: batch_x})
-        # Display loss
-        if i % display_step == 0 or i == 1:
-            print("Step %i: Minibatch Loss: %f" % (i, l))
+    graph = tf.get_default_graph()
+    model_input = graph.get_tensor_by_name("input:0")
+    model_output = graph.get_tensor_by_name("output:0")
 
     # Testing
     n = 4
@@ -47,7 +23,7 @@ with tf.Session() as sess:
         # MNIST test set
         batch_x, _ = mnist.test.next_batch(n)
         # Encode and decode the digit image
-        g = sess.run(model.decoder, feed_dict={model.input: batch_x})
+        g = sess.run(model_output, feed_dict={model_input: batch_x})
 
         # Display original images
         for j in range(n):
@@ -71,3 +47,4 @@ with tf.Session() as sess:
     plt.figure(figsize=(n, n))
     plt.imshow(canvas_recon, origin="upper", cmap="gray")
     plt.show()
+
