@@ -37,4 +37,5 @@ config = {
             "activation": tf.nn.sigmoid,
         },
     ],
+    "loss": None,
 }

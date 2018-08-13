@@ -8,8 +8,8 @@ mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
 
 with tf.Session() as sess:
     # restore model
-    saver = tf.train.import_meta_graph("./Model/autoencoder-30000.meta")
-    saver.restore(sess, tf.train.latest_checkpoint("./Model"))
+    saver = tf.train.import_meta_graph("./Model/AE/test_model-30000.meta")
+    saver.restore(sess, tf.train.latest_checkpoint("./Model/AE"))
 
     graph = tf.get_default_graph()
     model_input = graph.get_tensor_by_name("input:0")

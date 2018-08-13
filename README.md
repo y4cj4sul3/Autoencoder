@@ -1,13 +1,17 @@
 # Autoencoder
 
-Try to build many kinds of autoencoder. Currently got general autoencoder only.
-VAE, RAE, and VRAE will be add in the future.
+Try to build many kinds of autoencoder. Currently got vanilla autoencoder and variantional autoencoder only.
+RAE, and VRAE will be added in the future.
 
 ## Example
 
+Use the example from tensorflow example tutorial.
+
 ### AE
 
-Use example from tensorflow example tutorial.
+The training process will save model in `Model/AE/` folder,
+make sure the folder exist otherwise the files will failed to saved.<br>
+During the evaluation, pretrained model will be restored for further testing.<br>
 
 ```
 # train
@@ -15,6 +19,30 @@ python train_AE.py
 # test
 python eval_AE.py
 ```
+
+Also, the model graph will be save in `Log/AE/` folder before training. Use the following command to visualize the model graph.
+
+```
+# launch tensorboard
+tensorboard --logdir=Log/AE
+```
+
+The model configure defined in `config_AE.py`.
+
+### VAE
+
+Similar to AE, model saved in `Model/VAE/`, graph in `Log/VAE/`, and the model configure defined in `config_VAE.py`.
+
+```
+# train
+python train_VAE.py
+# test
+python eval_VAE.py
+# launch tensorboard
+tensorboard --logdir=Log/VAE
+```
+
+Different to the previous example restores whole model for evaluation, this example only restores the decoder for using.<br>
 
 ## Usage
 
@@ -32,12 +60,14 @@ model.train(learning_rate)
 sess.run(model.init)
 
 # train
-_, l = sess.run([model.optimizer, model.loss], feed_dict={model.input: batch_x})
+sess.run(model.optimizer, feed_dict={model.input: data})
 
 # test full model
-g = sess.run(model.decoder, feed_dict={model.input: batch_x})
+sess.run(model.output, feed_dict={model.input: data})
 # test encoder
-g = sess.run(model.encoder, feed_dict={model.input: batch_x})
+sess.run(model.encoder, feed_dict={model.input: data})
+# test decoder
+sess.run(model.decoder, feed_dict={model.decoder_input: data})
 ```
 
 ## Version
