@@ -14,56 +14,39 @@ class Model:
             self.random_init = tf.random_normal
 
         # Construct model
-        # input
-        self.input = tf.placeholder(tf.float32, config["input_shape"], name="input")
+        # nodes: every node or layer need register
+        self.nodes = {}
+        self.loss = 0
 
-        # encoder
-        with tf.name_scope("encoder"):
-            # encoder
-            self.encoder = self.createBlock(config["encoder"], self.input)
-
-            # sampler
-            if "sampler" in config and config["sampler"] is not None:
-                # variational autoencoder
-                with tf.name_scope("sampler"):
-                    self.encoder = self.createSampler(config["sampler"], self.encoder)
-
-        # decoder
-        with tf.name_scope("decoder"):
-            # decoder input
-            self.decoder = tf.placeholder_with_default(
-                self.encoder, self.encoder.get_shape(), name="decoder_input"
-            )
-            # decoder
-            self.decoder = self.createBlock(config["decoder"], self.decoder)
-
-        # output
-        self.output = tf.identity(self.decoder, name="output")
+        # create blocks
+        self.createBlocks(config["model"])
 
         # loss
         with tf.name_scope("loss"):
-            # reconstruction loss
-            with tf.name_scope("reconstruction_loss"):
-                if "loss" not in config or config["loss"] is None:
-                    # default loss: mean square error
-                    self.encode_decode_loss = tf.reduce_mean(
-                        tf.pow(self.input - self.output, 2)
-                    )
-                else:
-                    # custom loss
-                    self.encode_decode_loss = config["loss"](self.input, self.output)
-
-            # variational loss
-            if "sampler" not in config or config["sampler"] is None:
-                self.loss = self.encode_decode_loss
-            else:
-                # KL divergence
-                with tf.name_scope("KL_divergence_loss"):
-                    self.kl_div_loss = (
-                        1 + self.z_std - tf.square(self.z_mean) - tf.exp(self.z_std)
-                    )
-                    self.kl_div_loss = -0.5 * tf.reduce_sum(self.kl_div_loss, 1)
-                self.loss = tf.reduce_mean(self.encode_decode_loss + self.kl_div_loss)
+            for loss_config in config["loss"]:
+                with tf.name_scope(loss_config["name"]):
+                    # ground truth & prediction
+                    ground_truth = self.nodes[loss_config["ground_truth"]]
+                    prediction = self.nodes[loss_config["prediction"]]
+                    # weight
+                    loss_weight = loss_config["weight"]
+                    if (
+                        "loss_func" not in loss_config
+                        or loss_config["loss_func"] is None
+                    ):
+                        # default loss: mean square error
+                        loss = loss_weight * tf.reduce_mean(
+                            tf.pow(ground_truth - prediction, 2)
+                        )
+                    else:
+                        # custom loss
+                        loss = loss_weight * loss_config["loss_func"](
+                            ground_truth, prediction
+                        )
+                # add loss
+                self.loss += loss
+            # total loss (mean up batch dim)
+            self.loss = tf.reduce_mean(self.loss)
 
     def train(self, learning_rate):
         # optimizer
@@ -72,60 +55,164 @@ class Model:
         # init tf variables
         self.init = tf.global_variables_initializer()
 
-    def createBlock(self, block_config, input_layer):
-        layers = input_layer
-        for layer_config in block_config:
-            if layer_config["type"] == "FC":
-                # Fully Connected
-                with tf.name_scope("FC"):
+    def createBlocks(self, config):
+        for block_config in config:
+            # create block scope
+            with tf.name_scope(block_config["name"]):
+                # layers
+                if "layers" in block_config and block_config["layers"] is not None:
+                    # create layers
+                    self.createLayers(block_config["layers"])
+                # blocks
+                if "blocks" in block_config and block_config["blocks"] is not None:
+                    # create blocks
+                    self.createBlocks(block_config["blocks"])
+
+    def createLayers(self, config):
+        for layer_config in config:
+            # Config Parameters
+            layer_type = layer_config["type"]
+            layer_name = layer_config["name"]
+            # Create Layer
+            # Fully Connected
+            if layer_type == "FC":
+                with tf.name_scope(layer_name):
+                    # input size
+                    # input data shape should be [batch, data_size]
+                    # TODO: reshape
+                    input_layer = self.nodes[layer_config["input"]]
+                    input_size = input_layer.get_shape().as_list()[1]
                     # weight & bias
                     weight = tf.Variable(
-                        self.random_init(
-                            [layer_config["input_size"], layer_config["output_size"]]
-                        ),
+                        self.random_init([input_size, layer_config["output_size"]]),
                         name="weight",
                     )
                     bias = tf.Variable(
                         self.random_init([layer_config["output_size"]]), name="bias"
                     )
                     # build layer
-                    layers = layer_config["activation"](
-                        tf.matmul(layers, weight) + bias
-                    )
-        return layers
+                    activation = layer_config["activation"]
+                    if activation is None:
+                        # linear
+                        self.nodes[layer_name] = tf.matmul(input_layer, weight) + bias
+                    else:
+                        self.nodes[layer_name] = activation(
+                            tf.matmul(input_layer, weight) + bias
+                        )
 
-    def createSampler(self, block_config, input_layer):
-        # mean
-        with tf.name_scope("mean"):
-            # weight & bias
-            z_mean_w = tf.Variable(
-                self.random_init(
-                    [block_config["input_size"], block_config["output_size"]]
-                ),
-                name="weight",
-            )
-            z_mean_b = tf.Variable(self.random_init([block_config["output_size"]]))
-            # build vector
-            self.z_mean = tf.matmul(self.encoder, z_mean_w) + z_mean_b
-        # standard deviation
-        with tf.name_scope("standard_deviation"):
-            # weight & bias
-            z_std_w = tf.Variable(
-                self.random_init(
-                    [block_config["input_size"], block_config["output_size"]]
+            # Vanilla RNN
+            elif layer_type == "RNN":
+                """
+                # weight & bias
+                weight = tf.Variable(
+                    self.random_init(
+                        [layer_config["input_size"] + layer_config["output_size"], layer_config["output_size"]]
+                    ),
+                    name="weight",
                 )
-            )
-            z_std_b = tf.Variable(self.random_init([block_config["output_size"]]))
-            # build vector
-            self.z_std = tf.matmul(self.encoder, z_std_w) + z_std_b
-        # epsilon
-        epsilon = tf.random_normal(
-            [block_config["output_size"]],
-            dtype=tf.float32,
-            mean=0.,
-            stddev=1.0,
-            name="epsilon",
-        )
-        # z = mean + std*eps
-        z = self.z_mean + tf.exp(self.z_std / 2) * epsilon
-        return z
+                bias = tf.Variable(
+                    self.random_init([layer_config["output_size"]]), name="bias"
+                )
+                # build layer
+                for _ in range(layer_config["sequence_len"]):
+                    # input
+                    if layer_config["input"] == "new input":
+                        # create new placehold
+                        pass
+                    else:
+                        # get previous layer
+                """
+                pass
+
+            # LSTM
+            elif layer_type == "LSTM":
+                """
+                # parameters
+                hidden_size = layer_config["output_size"]
+                forget_bias = layer_config["forget_bias"]
+                batch_size
+                # create BasicLSTMCell
+                lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(hidden_size, forget_bias=forget_bias, state_is_tuple=True)
+                # defining initial state
+                init_state = rnn_cell.zero_state(batch_size, dtype=tf.float32)
+                outputs, states = rnn.dynamic_rnn(lstm_cell, layers)
+                """
+                pass
+
+            # Sampler for variational autoencoder
+            elif layer_type == "sampler":
+                with tf.name_scope(layer_name):
+                    # TODO: only standard deviation for each dimension
+                    #       might need to add convariance?
+                    # TODO: activation function?
+
+                    # input size
+                    # input data shape should be [batch, data_size]
+                    # TODO: reshape
+                    input_layer = self.nodes[layer_config["input"]]
+                    input_size = input_layer.get_shape().as_list()[1]
+                    # mean
+                    with tf.name_scope("mean"):
+                        # weight & bias
+                        z_mean_w = tf.Variable(
+                            self.random_init([input_size, layer_config["output_size"]]),
+                            name="weight",
+                        )
+                        z_mean_b = tf.Variable(
+                            self.random_init([layer_config["output_size"]]), name="bias"
+                        )
+                        # build vector
+                        z_mean = tf.matmul(input_layer, z_mean_w) + z_mean_b
+                    # standard deviation (actually is 4*log(std)?)
+                    with tf.name_scope("standard_deviation"):
+                        # weight & bias
+                        z_std_w = tf.Variable(
+                            self.random_init([input_size, layer_config["output_size"]]),
+                            name="weight",
+                        )
+                        z_std_b = tf.Variable(
+                            self.random_init([layer_config["output_size"]]), name="bias"
+                        )
+                        # build vector
+                        z_std = tf.matmul(input_layer, z_std_w) + z_std_b
+                    # epsilon
+                    epsilon = tf.random_normal(
+                        [layer_config["output_size"]],
+                        dtype=tf.float32,
+                        mean=0.,
+                        stddev=1.0,
+                        name="epsilon",
+                    )
+                    # reparameterize trick
+                    # z = mean + var*eps
+                    z = z_mean + tf.exp(z_std / 2) * epsilon
+                    self.nodes[layer_name] = z
+
+                    # loss
+                    with tf.name_scope("KL_divergence_loss"):
+                        loss = 1 + z_std - tf.square(z_mean) - tf.exp(z_std)
+                        # TODO: setting beta (currentlt 0.5)
+                        self.loss += -0.5 * tf.reduce_sum(loss, 1)
+
+            # Input
+            elif layer_type == "input":
+                # create placeholder
+                self.nodes[layer_name] = tf.placeholder(
+                    tf.float32, layer_config["shape"], name=layer_name
+                )
+
+            # Output
+            elif layer_type == "output":
+                # input layer
+                input_layer = self.nodes[layer_config["input"]]
+                # create identity
+                self.nodes[layer_name] = tf.identity(input_layer, name=layer_name)
+
+            # Block Input
+            elif layer_type == "block_input":
+                # input layer
+                input_layer = self.nodes[layer_config["input"]]
+                # create placeholder with default input
+                self.nodes[layer_name] = tf.placeholder_with_default(
+                    input_layer, input_layer.get_shape(), name=layer_name
+                )

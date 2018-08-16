@@ -30,21 +30,20 @@ with tf.Session() as sess:
     # Initialize
     sess.run(model.init)
 
+    # get model input
+    graph = tf.get_default_graph()
+    model_input = graph.get_tensor_by_name("inputs/input:0")
+
     # Training
     for i in range(1, num_steps + 1):
         # Prepare Data
         batch_x, _ = mnist.train.next_batch(batch_size)
 
         # Run Optimization
-        _, l, edl, kll = sess.run(
-            [model.optimizer, model.loss, model.encode_decode_loss, model.kl_div_loss],
-            feed_dict={model.input: batch_x},
-        )
+        _, l = sess.run([model.optimizer, model.loss], feed_dict={model_input: batch_x})
         # Display loss
         if i % display_step == 0 or i == 1:
-            print(
-                "Step %i, Loss: %f, EDL: %f, KLL: %f" % (i, l, np.sum(edl), np.sum(kll))
-            )
+            print("Step %i, Loss: %f" % (i, l))
 
     # Save Model
     saver = tf.train.Saver()
