@@ -55,6 +55,15 @@ class Model:
         # init tf variables
         self.init = tf.global_variables_initializer()
 
+    def getNode(self, path):
+        # split path
+        path = path.split('/')
+        # find the node with the path
+        node = self.nodes
+        for config in path:
+            node = node[config]
+        return node
+
     def createBlocks(self, config):
         for block_config in config:
             # create block scope
@@ -102,27 +111,183 @@ class Model:
 
             # Vanilla RNN
             elif layer_type == "RNN":
-                """
-                # weight & bias
-                weight = tf.Variable(
-                    self.random_init(
-                        [layer_config["input_size"] + layer_config["output_size"], layer_config["output_size"]]
-                    ),
-                    name="weight",
-                )
-                bias = tf.Variable(
-                    self.random_init([layer_config["output_size"]]), name="bias"
-                )
-                # build layer
-                for _ in range(layer_config["sequence_len"]):
-                    # input
-                    if layer_config["input"] == "new input":
-                        # create new placehold
-                        pass
-                    else:
-                        # get previous layer
-                """
-                pass
+                with tf.name_scope(layer_name):
+
+                    # parameters
+                    output_size = layer_config["output_size"]
+                    # cell 
+                    cell = tf.contrib.rnn.BasicRNNCell(output_size, activation=layer_config["activation"], name="RNNCell")
+                    
+                    # inputs & initial state
+                    if "input_mode" not in layer_config or layer_config["input_mode"] is None:
+                        # TODO: zero input w/ shape [batch_size, time_step, data_size]
+                        # initial state
+                        init_state = self.nodes[layer_config["init_state"]]
+                        # init state should be [batch, output_size]
+                        batch_size = init_state.get_shape().as_list()[0]
+                        # input size
+                        if isinstance(layer_config["input"], int):
+                            # specified fixed length
+                            input_size = layer_config["sequence_len"]
+                        elif isinstance(layer_config["sequence_len"], str):
+                            # other layers parameter
+                            input_size = self.nodes[layer_config["input"]]["input_size"]
+                        
+                    elif layer_config["input_mode"] == "INPUT_MODE":
+                        # feed w/ input data
+                        # input
+                        input_layer = self.nodes[layer_config["input"]]
+                        # input data shape should be [batch_size, time_step, data_size]
+                        batch_size = input_layer.get_shape().as_list()[0]
+                        time_step = input_layer.get_shape().as_list()[1]
+                        input_size = input_layer.get_shape().as_list()[2]
+                        if "sequence_len" in layer_config and layer_config["sequence_len"] is not None:
+                            if isinstance(layer_config["sequence_len"], int):
+                                # specified fixed length
+                                time_step = layer_config["sequence_len"]
+                            elif isinstance(layer_config["sequence_len"], str):
+                                # other layers parameter
+                                time_step = self.nodes[layer_config["sequence_len"]]["sequence_len"]
+                        # initial state
+                        if "init_state" in layer_config and layer_config["init_state"] is not None:
+                            # init state should be [batch_size, output_size]
+                            init_state = self.nodes[layer_config["init_state"]]
+                        else: 
+                            init_state = tf.zeros([batch_size, output_size])
+
+                        # build layer
+                        _state = init_state
+                        _outputs = []
+                        # time major
+                        input_layer = tf.transpose(input_layer, [1, 0, 2])
+                        # recurrent
+                        for step in range(time_step):
+                            _output, _state = cell(input_layer[step], _state)
+                            _outputs.append(_output)
+                    
+                    elif layer_config["input_mode"] == "OUTPUT_MODE":
+                        # feed w/ previous output
+                        # initial state
+                        init_state = self.getNode(layer_config["init_state"])
+                        # init state should be [batch, output_size]
+                        batch_size = init_state.get_shape().as_list()[0]
+                        # input size
+                        if isinstance(layer_config["input"], int):
+                            # specified fixed length
+                            input_size = layer_config["sequence_len"]
+                        elif isinstance(layer_config["sequence_len"], str):
+                            # other layers parameter
+                            input_size = self.nodes[layer_config["input"]]["input_size"]
+                        # time step
+                        if isinstance(layer_config["sequence_len"], int):
+                            # specified fixed length
+                            time_step = layer_config["sequence_len"]
+                        elif isinstance(layer_config["sequence_len"], str):
+                            # other layers parameter
+                            time_step = self.nodes[layer_config["sequence_len"]]["sequence_len"]
+
+                        # create FC for convert output from 
+                        # [batch_size, output_size] to [batch_size, input_size]
+                        #with tf.name_scope("FC"):
+                            # weight & bias
+                        fc_weight = tf.Variable(
+                            self.random_init([output_size, input_size]),
+                            name="weight",
+                        )
+                        fc_bias = tf.Variable(
+                            self.random_init([input_size]), name="bias"
+                        )
+
+                        # build layer
+                        _state = init_state
+                        _output = tf.zeros([batch_size, input_size])
+                        _outputs = []
+                        # fc activation
+                        fc_activation = layer_config["fc_activation"]
+                        if fc_activation is None:
+                            fc_activation = tf.identity
+                        # recurrent
+                        for _ in range(time_step):
+                            _output, _state = cell(_output, _state)
+                            # FC
+                            _output = fc_activation(
+                                tf.matmul(_output, fc_weight) + fc_bias
+                            )
+                            _outputs.append(_output)
+
+                    # stack outputs [batch_size, time_step, data_size]
+                    _outputs = tf.stack(_outputs, axis=1)
+
+                    # register node
+                    self.nodes[layer_name] = {
+                        "outputs": _outputs,
+                        "state": _state,
+                        "sequence_len": time_step,
+                        "input_size": input_size
+                    }
+                    
+
+                    '''
+                    # input size
+                    input_layer = self.nodes[layer_config["input"]]
+                    # TODO: reshape
+                    if len(input_layer.get_shape().as_list()) == 2:
+                        # decoder
+                        # input data shape should be [batch, data_size]
+                        batch_size = input_layer.get_shape().as_list()[0]
+                        input_size = input_layer.get_shape().as_list()[1]
+                        # parameters
+                        output_size = layer_config["output_size"]
+                        if "sequence_len" in layer_config and layer_config["sequence_len"] is not None:
+                            time_step = layer_config["sequence_len"]
+                        # cell 
+                        cell = tf.contrib.rnn.BasicRNNCell(output_size, activation=layer_config["activation"], name="RNNCell")
+                        # init state
+                        init_state = cell.zero_state(batch_size, dtype=tf.float32)
+                        # build layer
+                        _state = init_state
+                        for step in range(time_step):
+                            # TODO: deal w/ input
+                            _input = tf.gather(input_layer, step, axis=1)
+                            _output, _state = cell(_input, _state)
+                            _output = 
+                        
+
+                    elif len(input_layer.get_shape().as_list()) == 3:
+                        # encoder
+                        # input data shape should be [batch, time_step, data_size]
+                        batch_size = input_layer.get_shape().as_list()[0]
+                        time_step = input_layer.get_shape().as_list()[1]
+                        input_size = input_layer.get_shape().as_list()[2]
+                        # parameters
+                        output_size = layer_config["output_size"]
+                        if "sequence_len" in layer_config and layer_config["sequence_len"] is not None:
+                            time_step = layer_config["sequence_len"]
+                        # cell 
+                        cell = tf.contrib.rnn.BasicRNNCell(output_size, activation=layer_config["activation"], name="RNNCell")
+                        # init state
+                        init_state = cell.zero_state(batch_size, dtype=tf.float32)
+                        # build layer
+                        _state = init_state
+                        for step in range(time_step):
+                            # TODO: deal w/ input
+                            _input = tf.gather(input_layer, step, axis=1)
+                            _output, _state = cell(_input, _state)
+                        latent_code = _state
+                    '''
+                    '''
+                    # weight & bias
+                    
+                    weight = tf.Variable(
+                        self.random_init(
+                            [input_size + output_size, output_size]
+                        ),
+                        name="weight",
+                    )
+                    bias = tf.Variable(
+                        self.random_init([output_size]), name="bias"
+                    )
+                    '''
 
             # LSTM
             elif layer_type == "LSTM":
@@ -204,14 +369,14 @@ class Model:
             # Output
             elif layer_type == "output":
                 # input layer
-                input_layer = self.nodes[layer_config["input"]]
+                input_layer = self.getNode(layer_config["input"])
                 # create identity
                 self.nodes[layer_name] = tf.identity(input_layer, name=layer_name)
 
             # Block Input
             elif layer_type == "block_input":
                 # input layer
-                input_layer = self.nodes[layer_config["input"]]
+                input_layer = self.getNode(layer_config["input"])
                 # create placeholder with default input
                 self.nodes[layer_name] = tf.placeholder_with_default(
                     input_layer, input_layer.get_shape(), name=layer_name
