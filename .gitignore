@@ -9,4 +9,6 @@ autoencoder/__pycache__
 Log
 
 # model
-Model
+Model/AE/*
+Model/RAE/*
+Model/VAE/*
