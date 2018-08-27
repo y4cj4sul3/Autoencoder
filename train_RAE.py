@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from autoencoder.model import Model
-from config_RAE import config
+from config_RAE import config_train as config
 
 # Parameters
 learning_rate = 0.001

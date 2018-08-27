@@ -1,20 +1,29 @@
 import numpy as np
 import tensorflow as tf
+from autoencoder.model import Model
+from config_RAE import config_eval as config
 
 # Parameter
 batch_size = 128
 time_step = 8
 data_size = 1
 
+# reconstruct model
+model = Model(config)
+
+# Visualize Graph
+writer = tf.summary.FileWriter("Log/RAE")
+writer.add_graph(tf.get_default_graph())
+
 with tf.Session() as sess:
     # restore model
-    saver = tf.train.import_meta_graph("./Model/RAE/test_model-10000.meta")
-    print(saver)
+    #saver = tf.train.import_meta_graph("./Model/RAE/test_model-10000.meta")
+    saver = tf.train.Saver()
     saver.restore(sess, tf.train.latest_checkpoint("./Model/RAE"))
     
     graph = tf.get_default_graph()
     model_input = graph.get_tensor_by_name("inputs/input:0")
-    model_output = graph.get_tensor_by_name("decoder/output:0")
+    model_output = graph.get_tensor_by_name("output/output:0")
     
     # Prepare Data
     d = np.linspace(0, time_step, time_step, endpoint=False).reshape(

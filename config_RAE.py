@@ -1,4 +1,5 @@
 import tensorflow as tf
+import copy
 
 # Network Parameters
 batch_size = 128
@@ -7,7 +8,7 @@ time_step = 8
 num_hidden = 12
 
 # custom function
-def teaching_forcing_input(inputs):
+def teacher_forcing_input(inputs):
     # input shape should be [batch_size, time_step, data_size]
     _input = inputs[0]
     # get zero padding shape
@@ -15,8 +16,9 @@ def teaching_forcing_input(inputs):
     pad_shape[1] = 1
     # pad at t=0 and remove t=T
     return tf.concat([tf.zeros(pad_shape), _input[:, :-1]], axis=1)
-    
-config = {
+
+# training
+config_train = {
     "model": [
         {
             "name": "inputs",
@@ -47,17 +49,16 @@ config = {
         {
             "name": "decoder",
             "layers": [
-                
                 {
                     "type": "custom_function",
-                    "name": "teaching_forcing",
+                    "name": "teacher_forcing_input",
                     "input": "input",
-                    "function": teaching_forcing_input
+                    "function": teacher_forcing_input
                 },
                 {
                     "type": "RNN",
                     "name": "RNN_section",
-                    "input": "teaching_forcing",
+                    "input": "teacher_forcing_input",
                     "input_mode": "INPUT_MODE",
                     "init_state": "encoder/state",
                     "cell": tf.contrib.rnn.GRUCell,
@@ -98,17 +99,34 @@ config = {
     ],
 }
 
-'''
-{
-    "type": "RNN",
-    "name": "decoder",
-    "input": "encoder/input_size",  # specify data size
-    "input_mode": "OUTPUT_MODE",
-    "init_state": "encoder/state",
-    "cell": tf.contrib.rnn.GRUCell,
-    "output_size": num_hidden,
-    "activation": None,
-    "sequence_len": "encoder/sequence_len",  # as encoder
-    "fc_activation": None,
-},
-'''
+# evaluation
+config_eval = copy.deepcopy(config_train)
+# decoder
+config_eval["model"][2]["layers"] = [
+    {
+        "type": "RNN",
+        "name": "RNN_section",
+        "input": "encoder/input_size",  # specify data size
+        "input_mode": "OUTPUT_MODE",
+        "init_state": "encoder/state",
+        "cell": tf.contrib.rnn.GRUCell,
+        "output_size": num_hidden,
+        "activation": None,
+        "sequence_len": "encoder/sequence_len",  # as encoder
+        "fc_name": "hidden2output",
+        "fc_activation": None,
+    },
+]
+# output
+config_eval["model"].append(
+    {
+        "name": "output",
+        "layers": [
+            {
+                "type": "output",
+                "name": "output",
+                "input": "RNN_section/outputs"
+            }
+        ],
+    }
+)
