@@ -6,6 +6,16 @@ data_size = 1
 time_step = 8
 num_hidden = 12
 
+# custom function
+def teaching_forcing_input(inputs):
+    # input shape should be [batch_size, time_step, data_size]
+    _input = inputs[0]
+    # get zero padding shape
+    pad_shape = _input.get_shape().as_list()
+    pad_shape[1] = 1
+    # pad at t=0 and remove t=T
+    return tf.concat([tf.zeros(pad_shape), _input[:, :-1]], axis=1)
+    
 config = {
     "model": [
         {
@@ -37,24 +47,44 @@ config = {
         {
             "name": "decoder",
             "layers": [
+                
+                {
+                    "type": "custom_function",
+                    "name": "teaching_forcing",
+                    "input": "input",
+                    "function": teaching_forcing_input
+                },
                 {
                     "type": "RNN",
-                    "name": "decoder",
-                    "input": "encoder/input_size",  # specify data size
-                    "input_mode": "OUTPUT_MODE",
+                    "name": "RNN_section",
+                    "input": "teaching_forcing",
+                    "input_mode": "INPUT_MODE",
                     "init_state": "encoder/state",
                     "cell": tf.contrib.rnn.GRUCell,
                     "output_size": num_hidden,
                     "activation": None,
-                    "sequence_len": "encoder/sequence_len",  # as encoder
+                    "sequence_len": time_step,  # as encoder
                     "fc_activation": None,
                 },
-            ],
-        },
-        {
-            "name": "outputs",
-            "layers": [
-                {"type": "output", "name": "output", "input": "decoder/outputs"}
+                {
+                    "type": "reshape",
+                    "name": "flatten",
+                    "input": "RNN_section/outputs",
+                    "output_size": [-1, num_hidden],
+                },
+                {
+                    "type": "FC",
+                    "name": "hidden2output",
+                    "input": "flatten",
+                    "output_size": data_size,
+                    "activation": None
+                },
+                {
+                    "type": "reshape",
+                    "name": "output",
+                    "input": "hidden2output",
+                    "output_size": [batch_size, time_step, data_size]
+                }
             ],
         },
     ],
@@ -67,3 +97,18 @@ config = {
         }
     ],
 }
+
+'''
+{
+    "type": "RNN",
+    "name": "decoder",
+    "input": "encoder/input_size",  # specify data size
+    "input_mode": "OUTPUT_MODE",
+    "init_state": "encoder/state",
+    "cell": tf.contrib.rnn.GRUCell,
+    "output_size": num_hidden,
+    "activation": None,
+    "sequence_len": "encoder/sequence_len",  # as encoder
+    "fc_activation": None,
+},
+'''

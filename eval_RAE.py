@@ -9,11 +9,12 @@ data_size = 1
 with tf.Session() as sess:
     # restore model
     saver = tf.train.import_meta_graph("./Model/RAE/test_model-10000.meta")
+    print(saver)
     saver.restore(sess, tf.train.latest_checkpoint("./Model/RAE"))
     
     graph = tf.get_default_graph()
     model_input = graph.get_tensor_by_name("inputs/input:0")
-    model_output = graph.get_tensor_by_name("outputs/output:0")
+    model_output = graph.get_tensor_by_name("decoder/output:0")
     
     # Prepare Data
     d = np.linspace(0, time_step, time_step, endpoint=False).reshape(

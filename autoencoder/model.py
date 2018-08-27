@@ -115,9 +115,9 @@ class Model:
                             tf.matmul(input_layer, weight) + bias
                         )
 
-            # Vanilla RNN
+            # RNN
             elif layer_type == "RNN":
-                with tf.variable_scope(layer_name) as vs:
+                with tf.name_scope(layer_name):
 
                     # parameters
                     output_size = layer_config["output_size"]
@@ -377,3 +377,25 @@ class Model:
                 self.nodes[layer_name] = tf.placeholder_with_default(
                     input_layer, input_layer.get_shape(), name=layer_name
                 )
+            
+            # Reshape TODO: as option for layers
+            elif layer_type == "reshape":
+                # input layer
+                input_layer = self.getNode(layer_config["input"])
+                print(input_layer)
+                # reshape
+                self.nodes[layer_name] = tf.reshape(input_layer, layer_config["output_size"], name=layer_name)
+                print(self.nodes[layer_name])
+
+            # Custom Function
+            elif layer_type == "custom_function":
+                with tf.name_scope(layer_name):
+                    # input layer
+                    inputs = []
+                    if type(layer_config["input"]) == list:
+                        for _input in layer_config:
+                            inputs.append(self.getNode(_input))
+                    else:
+                        inputs.append(self.getNode(layer_config["input"]))
+                    # custom function
+                    self.nodes[layer_name] = layer_config["function"](inputs)
