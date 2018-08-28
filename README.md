@@ -139,8 +139,8 @@ sess.run(model_output, feed_dict={model_decoder_input: data})
 
 ## Version
 
-`tensorflow 1.7.1`
-`tensorboard 1.7.0`
+`tensorflow 1.4.0`
+`tensorboard 0.4.0`
 
 ## Reference
 

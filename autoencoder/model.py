@@ -122,10 +122,10 @@ class Model:
                 # cell
                 if "cell" not in layer_config or layer_config["cell"] is None:
                     # default RNN cell
-                    cell = tf.contrib.rnn.BasicRNNCell(output_size, activation=layer_config["activation"], name="RNNCell")
+                    cell = tf.contrib.rnn.BasicRNNCell(output_size, activation=layer_config["activation"])
                 else:
                     # specified cell
-                    cell = layer_config["cell"](output_size, activation=layer_config["activation"], name="RNNCell")
+                    cell = layer_config["cell"](output_size, activation=layer_config["activation"])
 
                 # inputs & initial state
                 if "input_mode" not in layer_config or layer_config["input_mode"] is None:
@@ -170,7 +170,7 @@ class Model:
                         init_state = cell.zero_state(batch_size, dtype=tf.float32)
 
                     # build layer
-                    with tf.name_scope(layer_name):
+                    with tf.variable_scope(layer_name):
                         _state = init_state
                         _outputs = []
                         # time major
@@ -227,7 +227,7 @@ class Model:
                         )
 
                     # build layer
-                    with tf.name_scope(layer_name):
+                    with tf.variable_scope(layer_name):
                         _state = init_state
                         _output = tf.zeros([batch_size, input_size])
                         _outputs = []
