@@ -7,7 +7,7 @@ from config_RAE import config_train as config
 learning_rate = 0.001
 num_steps = 10000
 batch_size = 128
-time_step = 8
+max_time_step = 10
 data_size = 1
 
 display_step = 1000
@@ -30,8 +30,8 @@ with tf.Session() as sess:
     model_input = graph.get_tensor_by_name("inputs/input:0")
 
     # Prepare Data
-    d = np.linspace(0, time_step, time_step, endpoint=False).reshape(
-        [1, time_step, data_size]
+    d = np.linspace(0, max_time_step, max_time_step, endpoint=False).reshape(
+        [1, max_time_step, data_size]
     )
     d = np.tile(d, (batch_size, 1, 1))
 
@@ -39,7 +39,8 @@ with tf.Session() as sess:
     for i in range(1, num_steps + 1):
         # Prepare Data
         r = np.random.randint(20, size=batch_size).reshape([batch_size, 1, 1])
-        r = np.tile(r, (1, time_step, data_size))
+        r = np.tile(r, (1, max_time_step, data_size))
+
         random_sequences = r + d
 
         # Run Optimization
@@ -49,6 +50,7 @@ with tf.Session() as sess:
         # Display loss
         if i % display_step == 0 or i == 1:
             print("Step %i, Loss: %f" % (i, l))
+            print("seq %i" % max_time_step)
 
     # Save Model
     saver = tf.train.Saver()

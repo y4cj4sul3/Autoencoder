@@ -5,7 +5,7 @@ from config_RAE import config_eval as config
 
 # Parameter
 batch_size = 128
-time_step = 8
+max_time_step = 10
 data_size = 1
 
 # reconstruct model
@@ -26,12 +26,12 @@ with tf.Session() as sess:
     model_output = graph.get_tensor_by_name("output/output:0")
     
     # Prepare Data
-    d = np.linspace(0, time_step, time_step, endpoint=False).reshape(
-        [1, time_step, data_size]
+    d = np.linspace(0, max_time_step, max_time_step, endpoint=False).reshape(
+        [1, max_time_step, data_size]
     )
     d = np.tile(d, (batch_size, 1, 1))
     r = np.random.randint(20, size=batch_size).reshape([batch_size, 1, 1])
-    r = np.tile(r, (1, time_step, data_size))
+    r = np.tile(r, (1, max_time_step, data_size))
     random_sequences = r + d
 
     # Testing

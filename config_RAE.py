@@ -4,7 +4,7 @@ import copy
 # Network Parameters
 batch_size = 128
 data_size = 1
-time_step = 8
+max_time_step = 10
 num_hidden = 12
 
 # custom function
@@ -26,7 +26,7 @@ config_train = {
                 {
                     "type": "input",
                     "name": "input",  # input name
-                    "shape": [batch_size, time_step, data_size],  # input shape
+                    "shape": [batch_size, max_time_step, data_size],  # input shape
                 }
             ],
         },
@@ -42,7 +42,7 @@ config_train = {
                     "cell": tf.contrib.rnn.GRUCell,
                     "output_size": num_hidden,  # i.e. hidden state size
                     "activation": None,
-                    "sequence_len": time_step,  # recurrent len
+                    "sequence_len": max_time_step,  # recurrent len
                 }
             ],
         },
@@ -64,7 +64,7 @@ config_train = {
                     "cell": tf.contrib.rnn.GRUCell,
                     "output_size": num_hidden,
                     "activation": None,
-                    "sequence_len": time_step,  # as encoder
+                    "sequence_len": max_time_step,  # as encoder
                     "fc_activation": None,
                 },
                 {
@@ -84,7 +84,7 @@ config_train = {
                     "type": "reshape",
                     "name": "output",
                     "input": "hidden2output",
-                    "output_size": [batch_size, time_step, data_size]
+                    "output_size": [batch_size, max_time_step, data_size]
                 }
             ],
         },
