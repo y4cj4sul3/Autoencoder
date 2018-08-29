@@ -8,7 +8,7 @@ batch_size = 128
 max_time_step = 10
 data_size = 1
 
-# reconstruct model
+# Reconstruct Model
 model = Model(config)
 
 # Visualize Graph
@@ -33,6 +33,8 @@ with tf.Session() as sess:
     r = np.random.randint(20, size=batch_size).reshape([batch_size, 1, 1])
     r = np.tile(r, (1, max_time_step, data_size))
     random_sequences = r + d
+    rand_len = 10 - np.random.randint(3)
+    random_sequences[:, rand_len:10, :] = -1
 
     # Testing
     (input_, output_) = sess.run([model_input, model_output], {model_input: random_sequences})
