@@ -40,8 +40,15 @@ with tf.Session() as sess:
         # Prepare Data
         r = np.random.randint(20, size=batch_size).reshape([batch_size, 1, 1])
         r = np.tile(r, (1, max_time_step, data_size))
-
         random_sequences = r + d
+        '''
+        # various length
+        for i in range(batch_size):
+            rl = np.random.randint(3)
+            random_sequences[i, 10-rl:10, :] = -1
+        '''
+        rand_len = 10 - np.random.randint(3)
+        random_sequences[:, rand_len:10, :] = -1
 
         # Run Optimization
         _, l = sess.run(
