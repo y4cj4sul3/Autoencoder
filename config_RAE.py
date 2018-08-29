@@ -39,7 +39,7 @@ config_train = {
                     "input": "input",
                     "input_mode": "INPUT_MODE",  # input, zeros, output
                     "init_state": None,  # init state
-                    "cell": tf.contrib.rnn.GRUCell,
+                    "cell": tf.contrib.rnn.BasicLSTMCell,
                     "output_size": num_hidden,  # i.e. hidden state size
                     "activation": None,
                     "sequence_len": max_time_step,  # recurrent len
@@ -61,7 +61,7 @@ config_train = {
                     "input": "teacher_forcing_input",
                     "input_mode": "INPUT_MODE",
                     "init_state": "encoder/state",
-                    "cell": tf.contrib.rnn.GRUCell,
+                    "cell": tf.contrib.rnn.BasicLSTMCell,
                     "output_size": num_hidden,
                     "activation": None,
                     "sequence_len": max_time_step,  # as encoder
