@@ -14,12 +14,12 @@ hidden_size = int(sys.argv[3])
 latent_size = int(sys.argv[4])
 
 # Dataset
-with open('../raw_trajectory_3/testcase.json', 'r') as fp:
+with open('../raw_trajectory_3/training.json', 'r') as fp:
   dataset = json.load(fp)
 
 # Parameters
 learning_rate = 0.001
-iteration = 30000
+iteration = 10000
 batch_size = 100
 max_seq_len = dataset['max_len']
 data_size = len(dataset['data'][0][0])
@@ -27,17 +27,22 @@ batches = int(len(dataset['data']) / batch_size)
 
 display_step = 100
 save_step = 10000
+decay_step = 2000
 
 # Construct model
-config = config_ELSA.createConfig(batch_size, max_seq_len, data_size, hidden_size, latent_size, ae_type, cell_type, "train")
+config = config_ELSA.createConfig(batch_size, max_seq_len, data_size, hidden_size, latent_size, ae_type, cell_type, "eval")
 model = Model(config)
-model.train(learning_rate)
+model.train()
 
 # Visualize Graph
 sub_path = 'ELSA/'+ae_type+'_'+cell_type+'_'+sys.argv[3]+'_'+sys.argv[4]
 writer = tf.summary.FileWriter('Log/'+sub_path)
 writer.add_graph(tf.get_default_graph())
-model_loss = tf.summary.scalar('loss', model.loss)
+
+# Summary Log
+sum_loss = tf.summary.scalar('loss', model.loss)
+sum_rl = tf.summary.scalar('learning_rate', model.learning_rate)
+sum_merged = tf.summary.merge_all()
 
 # Check Path
 file_path = './Model/'+sub_path
@@ -46,7 +51,7 @@ if not os.path.exists(file_path):
 saver = tf.train.Saver()
 
 # Prepare Data
-data = [seq + [[0]*data_size]*(max_seq_len-len(seq)) for seq in dataset['data']]
+data = [seq + [seq[-1]]*(max_seq_len-len(seq)) for seq in dataset['data']]
 print(np.shape(data))
 
 # Start training
@@ -66,9 +71,13 @@ with tf.Session() as sess:
     batch_idx = (i % batches) * batch_size
     batch_x = data[batch_idx:batch_idx+batch_size]
 
+    # Learning Rate Decay
+    if i % decay_step == decay_step-1:
+      learning_rate *= 0.1
+
     # Run Optimization
     _, l, s = sess.run(
-      [model.optimizer, model.loss, model_loss], feed_dict={model_input: batch_x}
+      [model.optimizer, model.loss, sum_merged], feed_dict={model_input: batch_x, model.learning_rate: learning_rate}
     )
 
     # Display loss

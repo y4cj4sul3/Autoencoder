@@ -51,12 +51,13 @@ class Model:
             # total loss (mean up batch dim)
             self.loss = tf.reduce_mean(self.loss)
 
-    def train(self, learning_rate):
+    def train(self):
         '''
         provide initialize operation ```init``` and training operation ```optimizer```
         '''
         # optimizer
-        self.optimizer = tf.train.RMSPropOptimizer(learning_rate).minimize(self.loss)
+        self.learning_rate = tf.placeholder(tf.float32, [], name="learning_rate")
+        self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate).minimize(self.loss)
 
         # init tf variables
         self.init = tf.global_variables_initializer()
