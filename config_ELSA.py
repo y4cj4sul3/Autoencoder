@@ -46,7 +46,7 @@ def createConfig(batch_size, max_time_step, data_size, hidden_size, latent_size,
 
     # cell
     if cell_type == 'LSTM':
-        cell = tf.contrib.rnn.LSTMCell
+        cell = tf.contrib.rnn.BasicLSTMCell
     elif cell_type == 'GRU':
         cell = tf.contrib.rnn.GRUCell
     else:

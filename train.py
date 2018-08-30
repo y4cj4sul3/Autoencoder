@@ -14,7 +14,7 @@ hidden_size = int(sys.argv[3])
 latent_size = int(sys.argv[4])
 
 # Dataset
-with open('../raw_trajectory_3/training.json', 'r') as fp:
+with open('../raw_trajectory_3/training_2.json', 'r') as fp:
   dataset = json.load(fp)
 
 # Parameters

@@ -169,6 +169,7 @@ class Model:
                         # zero init state
                         #init_state = tf.zeros([batch_size, output_size], name="init_state")
                         init_state = cell.zero_state(batch_size, dtype=tf.float32)
+                        print(init_state)
 
                     # build layer
                     with tf.variable_scope(layer_name):
@@ -187,6 +188,12 @@ class Model:
                     # feed w/ previous output
                     # initial state
                     init_state = self.getNode(layer_config["init_state"])
+                    print(cell)
+                    if isinstance(cell, tf.contrib.rnn.BasicLSTMCell):
+                        print('wtf')
+                        if not isinstance(init_state, tf.contrib.rnn.LSTMStateTuple):
+                            print('wtff')
+                            init_state = tf.contrib.rnn.LSTMStateTuple(init_state[0], init_state[1])
                     # init state should be [batch, output_size]
                     # TODO: dirty code
                     if hasattr(init_state, 'get_shape'):

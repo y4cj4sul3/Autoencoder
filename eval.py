@@ -22,7 +22,7 @@ hidden_size = int(sys.argv[3])
 latent_size = int(sys.argv[4])
 
 # Dataset
-with open("../raw_trajectory_3/testing.json", "r") as fp:
+with open("../raw_trajectory_3/dataset_2.json", "r") as fp:
     dataset = json.load(fp)
 
 # Parameters
@@ -85,7 +85,7 @@ with tf.Session() as sess:
     for i in range(max_seq_len-1):
       plt.plot(_input[0, i:i+2, 0], _input[0, i:i+2, 1], c=[0, 1, 0, 0.5])
       plt.plot(_output[0, i:i+2, 0], _output[0, i:i+2, 1], c=[1, 0, 0, float(i)/float(max_seq_len)])
-      plt.arrow(_output[0, i, 0], _output[0, i, 1], 0.1*_output[0, i, 2], 0.1*_output[0, i, 3])
+      #plt.arrow(_output[0, i, 0], _output[0, i, 1], 0.1*_output[0, i, 2], 0.1*_output[0, i, 3])
 
     plt.axis([-1, 1, -1, 1])
     plt.show()
