@@ -13,16 +13,18 @@ def l2norm(a, b):
     return np.sqrt(np.sum(np.power(a - b, 2)))
 
 def mse(a, b):
-    return np.mean(np.power(a-b, 2))
+    return np.mean(np.mean(np.power(a-b, 2)))
 
 # Arguments
 ae_type = sys.argv[1]
 cell_type = sys.argv[2]
 hidden_size = int(sys.argv[3])
 latent_size = int(sys.argv[4])
+dir_path = sys.argv[5]
+data_path = sys.argv[6]
 
 # Dataset
-with open("../raw_trajectory_3/dataset_2.json", "r") as fp:
+with open(data_path, "r") as fp:
     dataset = json.load(fp)
 
 # Parameters
@@ -44,7 +46,7 @@ config = config_ELSA.createConfig(
 model = Model(config)
 
 # Visualize Graph
-sub_path = "ELSA/" + ae_type + "_" + cell_type + "_" + sys.argv[3] + "_" + sys.argv[4]
+sub_path = dir_path + "/" + ae_type + "_" + cell_type + "_" + sys.argv[3] + "_" + sys.argv[4]
 writer = tf.summary.FileWriter("Log/" + sub_path)
 writer.add_graph(tf.get_default_graph())
 
@@ -89,6 +91,10 @@ with tf.Session() as sess:
 
     plt.axis([-1, 1, -1, 1])
     plt.show()
+
+    # lstm
+    if len(np.shape(_hidden)) == 3:
+      _hidden = np.reshape(np.stack(_hidden, axis=1), (-1, 2*hidden_size))
 
     # compare latent code
     max_d = 0

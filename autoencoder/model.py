@@ -193,7 +193,7 @@ class Model:
                         print('wtf')
                         if not isinstance(init_state, tf.contrib.rnn.LSTMStateTuple):
                             print('wtff')
-                            init_state = tf.contrib.rnn.LSTMStateTuple(init_state[0], init_state[1])
+                            init_state = tf.contrib.rnn.LSTMStateTuple(init_state[1], init_state[0])
                     # init state should be [batch, output_size]
                     # TODO: dirty code
                     if hasattr(init_state, 'get_shape'):
