@@ -57,8 +57,12 @@ sum_merged = tf.summary.merge_all()
 data = [seq + [seq[-1]]*(max_seq_len-len(seq)) for seq in dataset['data']]
 print(np.shape(data))
 
+# Config
+config_tf = tf.ConfigProto()
+config_tf.gpu_options.allow_growth=True
+
 # Start training
-with tf.Session() as sess:
+with tf.Session(config=config_tf) as sess:
   # Initialize
   sess.run(model.init)
   saver = tf.train.Saver()
