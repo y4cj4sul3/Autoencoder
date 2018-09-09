@@ -3,8 +3,7 @@ import numpy as np
 import json
 import sys
 import os
-from autoencoder.model import Model
-#from config_ELSA import config_train as config
+from autoencoder import Model
 import config_ELSA
 
 # Arguments
@@ -21,7 +20,7 @@ with open(data_path, 'r') as fp:
 
 # Parameters
 learning_rate = 0.001
-iteration = 10000
+iteration = 30000
 batch_size = 100
 max_seq_len = dataset['max_len']
 data_size = len(dataset['data'][0][0])

@@ -12,14 +12,14 @@ data_size = 1
 model = Model(config)
 
 # Visualize Graph
-writer = tf.summary.FileWriter("Log/RAE")
+writer = tf.summary.FileWriter("Log")
 writer.add_graph(tf.get_default_graph())
 
 with tf.Session() as sess:
     # restore model
     #saver = tf.train.import_meta_graph("./Model/RAE/test_model-10000.meta")
     saver = tf.train.Saver()
-    saver.restore(sess, tf.train.latest_checkpoint("./Model/RAE"))
+    saver.restore(sess, tf.train.latest_checkpoint("./Model"))
     
     graph = tf.get_default_graph()
     model_input = graph.get_tensor_by_name("inputs/input:0")

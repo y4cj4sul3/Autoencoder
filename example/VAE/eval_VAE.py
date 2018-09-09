@@ -13,8 +13,8 @@ batch_size = 64
 
 with tf.Session() as sess:
     # restore model
-    saver = tf.train.import_meta_graph("./Model/VAE/test_model-30000.meta")
-    saver.restore(sess, tf.train.latest_checkpoint("./Model/VAE"))
+    saver = tf.train.import_meta_graph("./Model/test_model-30000.meta")
+    saver.restore(sess, tf.train.latest_checkpoint("./Model"))
     # extract decoder only
     graph = tf.get_default_graph()
     decoder_input = graph.get_tensor_by_name("decoder/decoder_input:0")

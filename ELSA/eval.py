@@ -3,14 +3,14 @@ import numpy as np
 import json
 import sys
 import matplotlib.pyplot as plt
-from autoencoder.model import Model
+from autoencoder import Model
 
 # from config_ELSA import config_eval as config
 import config_ELSA
 
 
 def l2norm(a, b):
-    return np.sqrt(np.sum(np.power(a - b, 2)))
+    return np.sqrt(np.sum(np.power(a-b, 2)))
 
 def mse(a, b):
     return np.mean(np.mean(np.power(a-b, 2)))
@@ -31,6 +31,7 @@ with open(data_path, "r") as fp:
 batch_size = len(dataset["data"])
 max_seq_len = dataset["max_len"]
 data_size = len(dataset["data"][0][0])
+#data_size = len(dataset["data"][0][0])-2
 
 # Reconstruct Model
 config = config_ELSA.createConfig(
@@ -67,10 +68,12 @@ with tf.Session() as sess:
     # padding
     data = [seq + [seq[-1]] * (max_seq_len - len(seq)) for seq in data]
     print(np.shape(data))
+    data = np.array(data)
 
     # Testing
     _input, _hidden, _output, loss = sess.run(
         [model_input, model_hidden, model_output, model.loss], {model_input: data}
+        #[model_input, model_hidden, model_output, model.loss], {model_input: data[:, :, 2:]}
     )
 
     print("Loss: {}".format(loss))
@@ -104,10 +107,12 @@ with tf.Session() as sess:
         max_d = dist
 
     for i in range(batch_size):
-      dist = mse(_hidden[0], _hidden[i])
-      plt.plot(_output[i, :, 0], _output[i, :, 1], c=[np.sqrt(dist/max_d), 0, 0.5, 1])
-
+      dist = mse(_hidden[0], _hidden[i]) 
+      plt.plot(_output[i, :, 0], _output[i, :, 1], c=[(dist/max_d), 0, 0.5, 1])
+      #plt.plot(data[i, :, 0], data[i, :, 1], c=[(dist/max_d), 0, 0.5, 1])
+    
     plt.plot(_input[0, :, 0], _input[0, :, 1], c=[1, 1, 0, 1])
+    #plt.plot(data[0, :, 0], data[0, :, 1], c=[1, 1, 0, 1])
 
     plt.axis([-1, 1, -1, 1])
 

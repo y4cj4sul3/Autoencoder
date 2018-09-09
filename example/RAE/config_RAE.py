@@ -109,7 +109,7 @@ config_eval["model"][2]["layers"] = [
         "input": "encoder/input_size",  # specify data size
         "input_mode": "OUTPUT_MODE",
         "init_state": "encoder/state",
-        "cell": tf.contrib.rnn.GRUCell,
+        "cell": tf.contrib.rnn.BasicLSTMCell,
         "output_size": num_hidden,
         "activation": None,
         "sequence_len": "encoder/sequence_len",  # as encoder

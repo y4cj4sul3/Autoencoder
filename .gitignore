@@ -2,11 +2,13 @@
 .vscode
 
 # python
-__pycache__
-autoencoder/__pycache__
+**/__pycache__
+
+# python package
+*.egg-info
 
 # log
-Log
+**/Log
 
 # model
-Model/
+**/Model

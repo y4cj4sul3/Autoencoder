@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
-from autoencoder.model import Model
+import os
+from autoencoder import Model
 from config_RAE import config_train as config
 
 # Parameters
@@ -14,11 +15,15 @@ display_step = 1000
 
 # Construct model
 model = Model(config)
-model.train(learning_rate)
+model.train()
 
 # Visualize Graph
-writer = tf.summary.FileWriter("Log/RAE")
+writer = tf.summary.FileWriter("Log")
 writer.add_graph(tf.get_default_graph())
+
+# Check Path
+if not os.path.exists('./Model'):
+    os.makedirs('./Model')
 
 # Start training
 with tf.Session() as sess:
@@ -52,7 +57,7 @@ with tf.Session() as sess:
 
         # Run Optimization
         _, l = sess.run(
-            [model.optimizer, model.loss], feed_dict={model_input: random_sequences}
+            [model.optimizer, model.loss], feed_dict={model_input: random_sequences, model.learning_rate: learning_rate}
         )
         # Display loss
         if i % display_step == 0 or i == 1:
@@ -61,6 +66,6 @@ with tf.Session() as sess:
 
     # Save Model
     saver = tf.train.Saver()
-    saver.save(sess, "./Model/RAE/test_model", global_step=num_steps)
+    saver.save(sess, "./Model/test_model", global_step=num_steps)
 
 

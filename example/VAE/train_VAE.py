@@ -3,8 +3,9 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
+import os
 from tensorflow.examples.tutorials.mnist import input_data
-from autoencoder.model import Model
+from autoencoder import Model
 from config_VAE import config
 
 # Import MNIST data
@@ -19,11 +20,15 @@ display_step = 1000
 
 # Construct model
 model = Model(config)
-model.train(learning_rate)
+model.train()
 
 # Visualize Graph
-writer = tf.summary.FileWriter("Log/VAE")
+writer = tf.summary.FileWriter("Log/")
 writer.add_graph(tf.get_default_graph())
+
+# Check Path
+if not os.path.exists('./Model'):
+    os.makedirs('./Model')
 
 # Start training
 with tf.Session() as sess:
@@ -40,11 +45,11 @@ with tf.Session() as sess:
         batch_x, _ = mnist.train.next_batch(batch_size)
 
         # Run Optimization
-        _, l = sess.run([model.optimizer, model.loss], feed_dict={model_input: batch_x})
+        _, l = sess.run([model.optimizer, model.loss], feed_dict={model_input: batch_x, model.learning_rate: learning_rate})
         # Display loss
         if i % display_step == 0 or i == 1:
             print("Step %i, Loss: %f" % (i, l))
 
     # Save Model
     saver = tf.train.Saver()
-    saver.save(sess, "./Model/VAE/test_model", global_step=num_steps)
+    saver.save(sess, "./Model/test_model", global_step=num_steps)
