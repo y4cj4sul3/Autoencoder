@@ -48,8 +48,9 @@ model = Model(config)
 
 # Visualize Graph
 sub_path = dir_path + "/" + ae_type + "_" + cell_type + "_" + sys.argv[3] + "_" + sys.argv[4]
-writer = tf.summary.FileWriter("Log/" + sub_path)
-writer.add_graph(tf.get_default_graph())
+print('./Model/'+sub_path)
+#writer = tf.summary.FileWriter("Log/" + sub_path)
+#writer.add_graph(tf.get_default_graph())
 
 with tf.Session() as sess:
     # Restore Model
@@ -92,7 +93,7 @@ with tf.Session() as sess:
       plt.plot(_output[0, i:i+2, 0], _output[0, i:i+2, 1], c=[1, 0, 0, float(i)/float(max_seq_len)])
       #plt.arrow(_output[0, i, 0], _output[0, i, 1], 0.1*_output[0, i, 2], 0.1*_output[0, i, 3])
 
-    plt.axis([-1, 1, -1, 1])
+    plt.axis([-10, 10, -10, 10])
     plt.show()
 
     # lstm
@@ -114,7 +115,18 @@ with tf.Session() as sess:
     plt.plot(_input[0, :, 0], _input[0, :, 1], c=[1, 1, 0, 1])
     #plt.plot(data[0, :, 0], data[0, :, 1], c=[1, 1, 0, 1])
 
-    plt.axis([-1, 1, -1, 1])
+    plt.axis([-10, 10, -10, 10])
+
+    plt.show()
+
+    # plot original trajectory
+    for i in range(batch_size):
+        dist = mse(_hidden[0], _hidden[i])
+        plt.plot(_input[i, :, 0], _input[i, :, 1], c=[(dist/max_d), 0, 0.5, 1])
+
+    plt.plot(_input[0, :, 0], _input[0, :, 1], c=[1, 1, 0, 1])
+
+    plt.axis([-10, 10, -10, 10])
 
     plt.show()
 

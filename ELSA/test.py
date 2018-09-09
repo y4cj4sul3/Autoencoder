@@ -1,15 +1,23 @@
 import tensorflow as tf
 import numpy as np
 import json
+import sys
 import matplotlib.pyplot as plt
-
-import Autoencoder as ae
-
+from autoencoder import Autoencoder as ae
 
 def mse(a, b):
   return np.mean(np.power(a-b, 2))
 
-with open('./Model/ELSA_2/dataset/testing_2.json', 'r') as fp:
+# Arguments
+ae_type = sys.argv[1]
+cell_type = sys.argv[2]
+hidden_size = int(sys.argv[3])
+latent_size = int(sys.argv[4])
+dir_path = sys.argv[5]
+data_path = sys.argv[6]
+
+# Parameters
+with open(data_path, 'r') as fp:
   data = json.load(fp)
 
 with tf.Session() as sess:
@@ -19,29 +27,28 @@ with tf.Session() as sess:
   batch = len(data['data'])
   
   # construct model
-  model = ae.Autoencoder(sess, 'Model/ELSA_2/', 'RAE', 'GRU', 128, 128, 1, seq_len, data_size)
+  model = ae.Autoencoder(sess, 'Model/'+dir_path+'/', ae_type, cell_type, hidden_size, latent_size, batch, seq_len, data_size)
 
   # padding
   data = np.array([seq + [seq[-1]]*(seq_len-len(seq)) for seq in data['data']])
   print(np.shape(data))
   
-  hidden_0 = model.encode([data[0]])
+  hiddens = model.encode(data)
 
   # compare latent code
   max_d = 0
   dists = []
   for i in range(batch):
-    hid = model.encode([data[i]])
-    dist = mse(hidden_0, hid)
+    dist = mse(hiddens[0], hiddens[i])
     if dist > max_d:
       max_d = dist
     dists.append(dist)
 
   for i in range(batch):
-    plt.plot(data[i, :, 0], data[i, :, 1], c=[np.sqrt(dists[i]/max_d), 0, 0.5, 1])
+    plt.plot(data[i, :, 0], data[i, :, 1], c=[(dists[i]/max_d), 0, 0.5, 1])
 
   plt.plot(data[0, :, 0], data[0, :, 1], c=[1, 1, 0, 1])
 
-  plt.axis([-1, 1, -1, 1])
+  plt.axis([-10, 10, -10, 10])
 
   plt.show()

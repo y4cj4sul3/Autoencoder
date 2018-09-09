@@ -48,6 +48,7 @@ class Autoencoder:
 
     # Restore Model
     file_path = file_path+self.ae_type+'_'+self.cell_type+'_{}_{}'.format(self.hidden_size, self.latent_size)
+    print(file_path)
     saver = tf.train.Saver()
     saver.restore(self.sess, tf.train.latest_checkpoint(file_path))
 
