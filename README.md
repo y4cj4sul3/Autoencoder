@@ -1,7 +1,13 @@
 # Autoencoder
 
-Try to build many kinds of autoencoder. Currently got vanilla autoencoder and variantional autoencoder only.
-RAE, and VRAE will be added in the future.
+Try to build many kinds of autoencoder.
+
+## Install
+
+```
+cd Autoencoder
+pip install -e .
+```
 
 ## Example
 
@@ -113,7 +119,7 @@ For variational autoencoder, loss of sampler, which is KL divergence, will be ad
 ### Training and Testing
 
 ```python
-from autoencoder.model import Model
+from autoencoder import Model
 
 # build model
 model = Model(config)
