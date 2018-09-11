@@ -20,7 +20,7 @@ with open(data_path, 'r') as fp:
 
 # Parameters
 learning_rate = 0.001
-iteration = 30000
+iteration = 10000
 batch_size = 100
 max_seq_len = dataset['max_len']
 data_size = len(dataset['data'][0][0])

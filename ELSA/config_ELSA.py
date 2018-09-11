@@ -10,12 +10,12 @@ num_hidden = 256
 # custom function
 def teacher_forcing_input(inputs):
     # input shape should be [batch_size, time_step, data_size]
-    #_input = inputs[0]
+    _input = inputs[0]
     # get zero padding shape
-    pad_shape = inputs.get_shape().as_list()
+    pad_shape = _input.get_shape().as_list()
     pad_shape[1] = 1
     # pad at t=0 and remove t=T
-    return tf.concat([tf.zeros(pad_shape), inputs[:, :-1]], axis=1)
+    return tf.concat([tf.ones(pad_shape), _input[:, :-1]], axis=1)
 
 # create config
 def createConfig(batch_size, max_time_step, data_size, hidden_size, latent_size, ae_type='RAE', cell_type='LSTM', mode="train"):
